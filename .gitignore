@@ -1,0 +1,18 @@
+# Godot-specific
+env_godot/.godot/
+env_godot/export_presets.cfg
+*.import
+
+# Python & ML specific
+rl_training/__pycache__/
+*.pyc
+rl_training/venv/
+rl_training/env/
+
+# RL Checkpoints and Logs (Crucial to prevent repo bloat)
+*.pt
+*.pth
+*.onnx
+rl_training/runs/
+rl_training/logs/
+rl_training/checkpoints/
