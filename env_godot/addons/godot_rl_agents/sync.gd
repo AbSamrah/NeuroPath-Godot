@@ -414,7 +414,6 @@ func connect_to_server():
 	var ip = "127.0.0.1"
 	var port = _get_port()
 	var connect = stream.connect_to_host(ip, port)
-	stream.set_no_delay(true)  # TODO check if this improves performance or not
 	stream.poll()
 	# Fetch the status until it is either connected (2) or failed to connect (3)
 	while stream.get_status() < 2:

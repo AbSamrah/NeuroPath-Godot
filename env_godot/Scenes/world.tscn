@@ -30,7 +30,8 @@ position = Vector2(847, 626)
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Goal"]
 shape = SubResource("CircleShape2D_tjyf2")
 
-[node name="Robot" parent="." instance=ExtResource("5_0g7a3")]
+[node name="Robot" parent="." node_paths=PackedStringArray("env_manager") instance=ExtResource("5_0g7a3")]
 position = Vector2(269, 175)
+env_manager = NodePath("../EnvironmentManager")
 
 [node name="MapBoundaries" parent="." instance=ExtResource("6_ww8v1")]

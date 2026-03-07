@@ -105,6 +105,8 @@ func _spawn_entity(scene_prefab: PackedScene, spawn_pos: Vector2) -> Node2D:
 	return entity
 
 func step_environment() -> Dictionary:
+	_current_steps += 1
+	
 	var is_terminated: bool = false
 	var reward: float = -0.05 
 	

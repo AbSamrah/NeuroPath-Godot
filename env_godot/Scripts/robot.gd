@@ -8,6 +8,9 @@ var max_lidar_distance: float = MAP_SIZE * 0.2
 var _lidar_rays: Array[RayCast2D] = []
 var goal_node: Node2D = null
 
+@export var env_manager: EnvironmentManager
+@export var ai_controller: Node2D
+
 func _ready() -> void:
 	var angle_step: float = TAU / float(RAY_COUNT) 
 	
@@ -55,6 +58,15 @@ func apply_action(action: Array[float]) -> void:
 		
 	velocity = input_velocity * max_speed
 	move_and_slide()
+	
+	if is_instance_valid(env_manager) and is_instance_valid(ai_controller):
+		var state: Dictionary = env_manager.step_environment()
+		
+		ai_controller.reward = state["reward"]
+		ai_controller.done = state["done"]
+		
+		if state["done"] == true:
+			env_manager.reset_episode()
 
 func reset_agent(start_pos: Vector2) -> void:
 	global_position = start_pos

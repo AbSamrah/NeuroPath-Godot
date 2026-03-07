@@ -11,9 +11,6 @@ func get_obs() -> Dictionary:
 	var obs_array: Array[float] = robot.get_observations()
 	return {"obs": obs_array}
 
-func get_reward() -> float:
-	var env_state: Dictionary = env_manager.step_environment()
-	return env_state["reward"]
 
 func get_action_space() -> Dictionary:
 	return {
@@ -29,16 +26,3 @@ func set_action(action: Dictionary) -> void:
 	
 	robot.apply_action(formatted_action)
 
-func get_done() -> bool:
-	var env_state: Dictionary = env_manager.step_environment()
-	var is_done: bool = env_state["done"]
-	
-	if is_done:
-		needs_reset = true
-		
-	return is_done
-
-func reset() -> void:
-	env_manager.reset_episode()
-	
-	needs_reset = false
