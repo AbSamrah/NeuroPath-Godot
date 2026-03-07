@@ -1,0 +1,36 @@
+[gd_scene load_steps=9 format=3 uid="uid://bqjuj4sjvbj43"]
+
+[ext_resource type="Script" path="res://Scripts/environment_manager.gd" id="1_stvfp"]
+[ext_resource type="PackedScene" uid="uid://djmuhkivx4tlj" path="res://Scenes/static_obstacle.tscn" id="2_uga2k"]
+[ext_resource type="PackedScene" uid="uid://b5onic443ib4t" path="res://Scenes/roam_creature.tscn" id="3_l3f6n"]
+[ext_resource type="PackedScene" uid="uid://sxh17fbdpo6w" path="res://Scenes/orbit_creature.tscn" id="4_2in55"]
+[ext_resource type="PackedScene" uid="uid://co32wwx1e1ulx" path="res://Scenes/robot.tscn" id="5_0g7a3"]
+[ext_resource type="Script" path="res://addons/godot_rl_agents/sync.gd" id="5_n3jt8"]
+[ext_resource type="PackedScene" uid="uid://bfd2lp041m5fr" path="res://Scenes/map_boundaries.tscn" id="6_ww8v1"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_tjyf2"]
+radius = 20.0
+
+[node name="World" type="Node2D"]
+
+[node name="EnvironmentManager" type="Node2D" parent="." node_paths=PackedStringArray("robot", "goal")]
+script = ExtResource("1_stvfp")
+robot = NodePath("../Robot")
+goal = NodePath("../Goal")
+static_obstacle_scene = ExtResource("2_uga2k")
+roam_creature_scene = ExtResource("3_l3f6n")
+orbit_creature_scene = ExtResource("4_2in55")
+
+[node name="Sync" type="Node2D" parent="."]
+script = ExtResource("5_n3jt8")
+
+[node name="Goal" type="Area2D" parent="."]
+position = Vector2(847, 626)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Goal"]
+shape = SubResource("CircleShape2D_tjyf2")
+
+[node name="Robot" parent="." instance=ExtResource("5_0g7a3")]
+position = Vector2(269, 175)
+
+[node name="MapBoundaries" parent="." instance=ExtResource("6_ww8v1")]
