@@ -18,6 +18,9 @@ const ORBIT_SPEED: float = 1.5
 var _consecutive_wins: int = 0
 var _curriculum_level: int = 0
 
+@export var max_steps_per_episode: int = 2000
+var _current_steps: int = 0
+
 # --- Packed Scenes (Prefabs to spawn) ---
 @export var static_obstacle_scene: PackedScene
 @export var roam_creature_scene: PackedScene
@@ -40,6 +43,8 @@ func _physics_process(delta: float) -> void:
 
 
 func reset_episode() -> void:
+	_current_steps = 0
+	
 	_check_curriculum_progression()
 	_clear_obstacles()
 	
@@ -103,9 +108,14 @@ func step_environment() -> Dictionary:
 	var is_terminated: bool = false
 	var reward: float = -0.05 
 	
+	
 	if robot.global_position.distance_to(goal.global_position) < 40.0:
 		_consecutive_wins += 1
 		return {"done": true, "reward": 100.0}
+	
+	if _current_steps >= max_steps_per_episode:
+		_consecutive_wins = 0
+		return {"done": true, "reward": -50.0}
 		
 	if robot.get_slide_collision_count() > 0:
 		is_terminated = true
