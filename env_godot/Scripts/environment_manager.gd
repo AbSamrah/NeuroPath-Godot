@@ -6,6 +6,7 @@ const CREATURE_SPEED: float = 150.0
 const ORBIT_RADIUS: float = 100.0
 const ORBIT_SPEED: float = 1.5 
 
+
 # --- Node References ---
 @export var robot: Robot
 @export var goal: Area2D
@@ -17,6 +18,9 @@ const ORBIT_SPEED: float = 1.5
 
 var _consecutive_wins: int = 0
 var _curriculum_level: int = 0
+
+var _goal_is_fixed: bool = true
+var _robot_spawn_mode: int = 0
 
 @export var max_steps_per_episode: int = 2000
 var _current_steps: int = 0
@@ -36,7 +40,12 @@ var _roam_targets: Dictionary = {}
 
 func _ready() -> void:
 	if is_instance_valid(robot) and is_instance_valid(goal):
-		robot.goal_node = goal
+		# 1. Connect the signal dynamically via code
+		goal.body_entered.connect(_on_goal_body_entered)
+		
+		# (Keep your existing initialization logic here)
+		# _update_spawn_parameters()
+		# reset_environment()
 
 func _physics_process(delta: float) -> void:
 	_update_dynamic_entities(delta)
@@ -45,24 +54,38 @@ func _physics_process(delta: float) -> void:
 func reset_episode() -> void:
 	_current_steps = 0
 	
+	# 1. Update rules and clean the board
 	_check_curriculum_progression()
 	_clear_obstacles()
 	
-	goal.global_position = _get_random_valid_position()
-	
-	var robot_start: Vector2 = _get_random_valid_position()
-	while robot_start.distance_to(goal.global_position) < 200.0:
+	# 2. Position the Goal based on flags
+	if _goal_is_fixed:
+		goal.global_position = Vector2(500, 500)
+	else:
+		goal.global_position = _get_random_valid_position()
+		
+	# 3. Position the Robot based on flags
+	var robot_start: Vector2
+	if _robot_spawn_mode == 0:
+		robot_start = Vector2(350, 500)
+	elif _robot_spawn_mode == 1:
+		var random_angle: float = randf() * TAU
+		var random_dist: float = randf_range(150.0, 300.0)
+		robot_start = goal.global_position + Vector2(cos(random_angle), sin(random_angle)) * random_dist
+	else: # _robot_spawn_mode == 2
 		robot_start = _get_random_valid_position()
+		while robot_start.distance_to(goal.global_position) < 200.0:
+			robot_start = _get_random_valid_position()
+			
 	robot.reset_agent(robot_start)
 	
+	# 4. Spawn Dynamic Entities (Only spawns if counts > 0)
 	var safe_distance: float = 120.0 
 	
 	for i in range(current_static_count):
 		var obs_pos: Vector2 = _get_random_valid_position()
-		
 		while obs_pos.distance_to(robot_start) < safe_distance or obs_pos.distance_to(goal.global_position) < safe_distance:
 			obs_pos = _get_random_valid_position()
-			
 		_spawn_entity(static_obstacle_scene, obs_pos)
 		
 	for i in range(current_roam_count):
@@ -77,13 +100,13 @@ func reset_episode() -> void:
 		
 	if spawn_orbit_creature and is_instance_valid(orbit_creature_scene):
 		_orbit_creature_ref = orbit_creature_scene.instantiate()
-		_orbit_angle = 0.0
-		
+		var _orbit_angle: float = 0.0
 		var initial_orbit_pos: Vector2 = goal.global_position + Vector2(cos(_orbit_angle), sin(_orbit_angle)) * ORBIT_RADIUS
 		_orbit_creature_ref.global_position = initial_orbit_pos
-		
 		add_child(_orbit_creature_ref)
 		_active_obstacles.append(_orbit_creature_ref)
+
+
 
 func _clear_obstacles() -> void:
 	for obs in _active_obstacles:
@@ -109,6 +132,9 @@ func step_environment() -> Dictionary:
 	
 	var is_terminated: bool = false
 	var reward: float = -0.05 
+	
+	var current_dist: float = robot.global_position.distance_to(goal.global_position)
+	
 	
 	
 	if robot.global_position.distance_to(goal.global_position) < 40.0:
@@ -143,20 +169,51 @@ func _check_curriculum_progression() -> void:
 	if _consecutive_wins >= 20:
 		_consecutive_wins = 0
 		_curriculum_level += 1
-		print("Curriculum Level Up! Now at level: ", _curriculum_level)
+		print("=================================================")
+		print("🏆 CURRICULUM LEVEL UP! Now at level: ", _curriculum_level)
+		print("=================================================")
 		
-		match _curriculum_level:
-			1:
-				current_static_count = 5
-			2:
-				current_static_count = 10
-			3:
-				current_roam_count = 1   
-			4:
-				current_roam_count = 3   
-			5:
-				spawn_orbit_creature = true 
-
+	match _curriculum_level:
+		0:
+			_goal_is_fixed = true
+			_robot_spawn_mode = 0
+			current_static_count = 0
+			current_roam_count = 0
+			spawn_orbit_creature = false
+		1:
+			_goal_is_fixed = true
+			_robot_spawn_mode = 1
+		2:
+			_goal_is_fixed = true
+			_robot_spawn_mode = 2
+		3:
+			_goal_is_fixed = false
+			_robot_spawn_mode = 2
+		4:
+			_goal_is_fixed = false
+			_robot_spawn_mode = 2
+			current_static_count = 5
+		5:
+			_goal_is_fixed = false
+			_robot_spawn_mode = 2
+			current_static_count = 10
+		6:
+			_goal_is_fixed = false
+			_robot_spawn_mode = 2
+			current_static_count = 10
+			current_roam_count = 1   
+		7:
+			_goal_is_fixed = false
+			_robot_spawn_mode = 2
+			current_static_count = 10
+			current_roam_count = 3   
+		_:
+			# Level 8 and beyond
+			_goal_is_fixed = false
+			_robot_spawn_mode = 2
+			current_static_count = 10
+			current_roam_count = 3
+			spawn_orbit_creature = true
 
 func _update_dynamic_entities(delta: float) -> void:
 	_update_orbit_creature(delta)
@@ -196,3 +253,18 @@ func _get_random_valid_position() -> Vector2:
 	var rand_x: float = randf_range(padding, MAP_SIZE - padding)
 	var rand_y: float = randf_range(padding, MAP_SIZE - padding)
 	return Vector2(rand_x, rand_y)
+	
+
+func _on_goal_body_entered(body: Node2D) -> void:
+	# Type-check to ensure a roaming creature didn't accidentally trigger the win
+	if body is Robot:
+		# 3. Trigger the +100 Reward and End the Episode
+		body.trigger_goal_reached()
+		
+		# 4. Handle your Curriculum Level Up & Reset Logic
+		_consecutive_wins += 1
+		_check_curriculum_progression() 
+		
+		# Depending on your RL loop, Stable Baselines might auto-reset the environment 
+		# upon receiving the 'done' flag. If it doesn't, you call your reset here:
+		reset_episode()

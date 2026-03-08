@@ -35,3 +35,5 @@ position = Vector2(269, 175)
 env_manager = NodePath("../EnvironmentManager")
 
 [node name="MapBoundaries" parent="." instance=ExtResource("6_ww8v1")]
+
+[connection signal="body_entered" from="Goal" to="EnvironmentManager" method="_on_goal_body_entered"]
